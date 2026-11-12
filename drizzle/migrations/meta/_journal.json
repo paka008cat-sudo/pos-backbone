@@ -351,6 +351,13 @@
       "when": 1794355202150,
       "tag": "0048_kenya_core_inventory_products",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794362605526,
+      "tag": "0049_platform_billing_settings",
+      "breakpoints": true
     }
   ]
 }
