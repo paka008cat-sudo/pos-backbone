@@ -37,19 +37,23 @@ describe('POS operation migration contract', () => {
       entry.tag === '0046_daraja_subscription_payments');
     const catalogMigration = journal.entries.find((entry: { tag: string }) =>
       entry.tag === '0048_kenya_core_inventory_products');
+    const billingMigration = journal.entries.find((entry: { tag: string }) =>
+      entry.tag === '0049_platform_billing_settings');
     const last = journal.entries.at(-1);
     expect(operationMigration).toBeDefined();
     expect(billMigration).toBeDefined();
     expect(bulkMigration).toBeDefined();
     expect(darajaMigration).toBeDefined();
     expect(catalogMigration).toBeDefined();
+    expect(billingMigration).toBeDefined();
     expect(operationMigration.idx).toBeLessThan(billMigration.idx);
     expect(billMigration.idx).toBeLessThan(bulkMigration.idx);
     expect(bulkMigration.idx).toBeLessThan(darajaMigration.idx);
     expect(darajaMigration.idx).toBeLessThan(catalogMigration.idx);
-    expect(catalogMigration.tag).toBe(last.tag);
-    expect(catalogMigration.idx).toBe(journal.entries.at(-2).idx + 1);
-    expect(catalogMigration.when).toBeGreaterThan(journal.entries.at(-2).when);
+    expect(catalogMigration.idx).toBeLessThan(billingMigration.idx);
+    expect(billingMigration.tag).toBe(last.tag);
+    expect(billingMigration.idx).toBe(journal.entries.at(-2).idx + 1);
+    expect(billingMigration.when).toBeGreaterThan(journal.entries.at(-2).when);
   });
   it('adds cross-device units and permits manual-depletion bulk sales in the backend contract', () => {
     expect(bulkUnitsMigration).toContain('ADD COLUMN IF NOT EXISTS sale_units jsonb');

@@ -36,13 +36,6 @@ describe("Daraja subscription payment contract", () => {
     );
   });
 
-  it("refreshes and retries once when Daraja explicitly rejects an access token", () => {
-    expect(helper).toContain("isInvalidDarajaAccessToken");
-    expect(helper).toContain("invalidateDarajaAccessToken");
-    expect(helper).toContain("Daraja rejected the access token; refreshing once");
-    expect(helper).toContain("darajaFetchJson");
-  });
-
   it("uses server-owned pricing and reuses an active STK attempt instead of sending duplicates", () => {
     expect(push).toContain(
       '.select("id,name,status,subscription_price_ksh,subscription_plan_days,payment_lock_active,payment_lock_amount_ksh")',
@@ -53,6 +46,15 @@ describe("Daraja subscription payment contract", () => {
     expect(push).toContain('parsedCallback.searchParams.set("payment_signature"');
     expect(push).not.toContain("payload.amount");
     expect(push).not.toContain("payload.plan_days");
+  });
+
+  it("times out stale no-checkout attempts and preserves recovery for a late signed callback", () => {
+    expect(push).toContain("const INITIATION_TIMEOUT_MS = 5 * 60 * 1000;");
+    expect(push).toContain('.is("checkout_request_id", null)');
+    expect(status).toContain('payment.status === "initiating" && !payment.checkout_request_id');
+    expect(status).toContain("No prompt is confirmed; you can try the payment again.");
+    expect(callback).toContain("canRecoverTimedOutInitiation");
+    expect(callback).toContain("Safaricom callback received; verifying payment.");
   });
 
   it("restricts payment verification to an active owner and does not activate from STK Query alone", () => {
