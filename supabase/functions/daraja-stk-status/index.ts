@@ -4,6 +4,9 @@ import { darajaStkQuery } from "../_shared/daraja.ts";
 const SHOP_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACTIVE_ATTEMPT_AGE_MS = 15 * 60 * 1000;
+const INITIATION_TIMEOUT_MS = 5 * 60 * 1000;
+const INITIATION_TIMEOUT_DESCRIPTION =
+  "No Safaricom checkout reference was received before the STK initiation timed out.";
 
 function paymentResponse(payment: Record<string, unknown>, message?: string) {
   return {
@@ -81,6 +84,37 @@ Deno.serve(async (req) => {
       checkout_request_id: null,
       message: "No recent M-Pesa payment attempt was found.",
     });
+  if (payment.status === "initiating" && !payment.checkout_request_id) {
+    const createdAt = Date.parse(String(payment.created_at ?? ""));
+    if (Number.isFinite(createdAt) && Date.now() - createdAt >= INITIATION_TIMEOUT_MS) {
+      const { error: timeoutError } = await db
+        .from("mpesa_subscription_payments")
+        .update({
+          status: "failed",
+          result_description: INITIATION_TIMEOUT_DESCRIPTION,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", payment.id)
+        .eq("status", "initiating")
+        .is("checkout_request_id", null);
+      if (timeoutError) console.error("Could not expire stale STK initiation", timeoutError.message);
+      return json({
+        success: true,
+        payment_status: timeoutError ? "initiating" : "failed",
+        checkout_request_id: null,
+        result_code: null,
+        message: timeoutError
+          ? "Safaricom has not confirmed an STK prompt yet. Check again shortly."
+          : "No STK checkout reference arrived within five minutes. No prompt is confirmed; you can try the payment again.",
+      });
+    }
+    return json(
+      paymentResponse(
+        payment,
+        "Safaricom has not confirmed an STK checkout reference yet. No prompt is confirmed; check again shortly.",
+      ),
+    );
+  }
   if (payment.status !== "pending" || !payment.checkout_request_id)
     return json(paymentResponse(payment));
 
