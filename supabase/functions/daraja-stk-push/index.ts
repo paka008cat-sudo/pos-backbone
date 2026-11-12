@@ -4,6 +4,9 @@ import { darajaCallbackSignature, darajaStkPush, normalizeKenyanPhone } from "..
 const SHOP_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACTIVE_ATTEMPT_AGE_MS = 10 * 60 * 1000;
+const INITIATION_TIMEOUT_MS = 5 * 60 * 1000;
+const INITIATION_TIMEOUT_DESCRIPTION =
+  "No Safaricom checkout reference was received before the STK initiation timed out.";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -79,6 +82,20 @@ Deno.serve(async (req) => {
     );
   }
 
+  const staleInitiationBefore = new Date(Date.now() - INITIATION_TIMEOUT_MS).toISOString();
+  const { error: expireError } = await db
+    .from("mpesa_subscription_payments")
+    .update({
+      status: "failed",
+      result_description: INITIATION_TIMEOUT_DESCRIPTION,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("shop_id", shopId)
+    .eq("status", "initiating")
+    .is("checkout_request_id", null)
+    .lt("created_at", staleInitiationBefore);
+  if (expireError) console.error("Could not expire stale M-Pesa initiation", expireError.message);
+
   // A network timeout can happen after Safaricom has accepted the prompt. Reuse
   // the active attempt instead of charging the owner twice on a quick retry.
   const recentSince = new Date(Date.now() - ACTIVE_ATTEMPT_AGE_MS).toISOString();
@@ -119,7 +136,9 @@ Deno.serve(async (req) => {
         success: false,
         payment_status: existing.status,
         error:
-          existing.status === "pending"
+          existing.status === "initiating" && !existing.checkout_request_id
+            ? "A previous M-Pesa request has not received a Safaricom checkout reference yet. Tap Check Payment Status; retry will be available once this attempt times out."
+            : existing.status === "pending"
             ? "An M-Pesa prompt for an earlier phone number is still active. Complete or cancel it, then tap Check Now before starting another payment."
             : "A previous M-Pesa request is still being confirmed. Wait briefly and tap Check Now before trying again.",
       },
