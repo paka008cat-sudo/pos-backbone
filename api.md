@@ -135,7 +135,21 @@ await supabase.rpc('admin_set_business_status', {
   _status: 'suspended', // active | suspended | closed
   _reason: 'Billing review',
 });
+const billing = await supabase.rpc('admin_get_platform_billing_settings');
+await supabase.rpc('admin_update_platform_billing_settings', {
+  p_trial_duration_days: 14,      // 0 disables trials for newly created businesses; range 0..365
+  p_subscription_price_ksh: 2500, // applies to all businesses' next payment; range 1..250000
+});
 ```
+
+Global billing settings are platform-admin-only. Changing the trial duration
+affects businesses created after the change; it does not shorten or extend
+existing trial end dates. Setting it to `0` means a new business is created
+without a free trial and immediately requires payment. Changing the shared price
+updates the stored renewal price for every existing business and is used for
+future signups. An already-paid subscription remains active until its current
+end date; no payment is taken early. An explicit Superadmin payment lock amount
+still overrides the regular renewal price until the lock is cleared or paid.
 
 ### Complete business profile and counter setup
 
