@@ -5,6 +5,9 @@ import {
   verifyDarajaCallbackSignature,
 } from "../_shared/daraja.ts";
 
+const INITIATION_TIMEOUT_DESCRIPTION =
+  "No Safaricom checkout reference was received before the STK initiation timed out.";
+
 function callbackItem(items: unknown, name: string): unknown {
   if (!Array.isArray(items)) return undefined;
   return items.find(
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
   if (paymentId) {
     const { data: byId, error: idError } = await db
       .from("mpesa_subscription_payments")
-      .select("id,shop_id,phone_number,amount_ksh,status,checkout_request_id")
+      .select("id,shop_id,phone_number,amount_ksh,status,checkout_request_id,result_description")
       .eq("id", paymentId)
       .maybeSingle();
     if (idError) {
@@ -84,24 +87,29 @@ Deno.serve(async (req) => {
         console.error("Callback checkout ID did not match its payment ID", paymentId);
         return json({ ResultCode: 0, ResultDesc: "Callback accepted" });
       }
-      if (!storedCheckoutId && (byId.status === "initiating" || byId.status === "pending")) {
+      const canRecoverTimedOutInitiation = byId.status === "failed" &&
+        byId.result_description === INITIATION_TIMEOUT_DESCRIPTION;
+      if (!storedCheckoutId && (
+        byId.status === "initiating" || byId.status === "pending" || canRecoverTimedOutInitiation
+      )) {
         let link = db
           .from("mpesa_subscription_payments")
           .update({
             checkout_request_id: checkoutId,
             merchant_request_id: merchantRequestId,
             status: "pending",
+            result_description: "Safaricom callback received; verifying payment.",
           })
           .eq("id", paymentId)
-          .eq("status", byId.status);
-        if (byId.status === "pending") link = link.is("checkout_request_id", null);
+          .eq("status", byId.status)
+          .is("checkout_request_id", null);
         const { error: linkError } = await link;
         if (linkError)
           console.error("Could not link callback to its payment row", linkError.message);
       }
       const { data: linked, error: linkedError } = await db
         .from("mpesa_subscription_payments")
-        .select("id,shop_id,phone_number,amount_ksh,status,checkout_request_id")
+        .select("id,shop_id,phone_number,amount_ksh,status,checkout_request_id,result_description")
         .eq("id", paymentId)
         .maybeSingle();
       if (linkedError) {
