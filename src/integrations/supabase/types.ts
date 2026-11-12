@@ -948,14 +948,13 @@ export type Database = {
           last_payment_phone: string | null
           last_payment_receipt: string | null
           low_stock_threshold: number
-          name: string
-          owner_email: string | null
-          owner_phone: string | null
           payment_lock_active: boolean
           payment_lock_amount_ksh: number
           payment_lock_reason: string | null
           payment_lock_started_at: string | null
           payment_lock_started_by: string | null
+          name: string
+          owner_email: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -985,14 +984,13 @@ export type Database = {
           last_payment_phone?: string | null
           last_payment_receipt?: string | null
           low_stock_threshold?: number
-          name: string
-          owner_email?: string | null
-          owner_phone?: string | null
           payment_lock_active?: boolean
           payment_lock_amount_ksh?: number
           payment_lock_reason?: string | null
           payment_lock_started_at?: string | null
           payment_lock_started_by?: string | null
+          name: string
+          owner_email?: string | null
           status?: string
           subscription_ends_at?: string | null
           subscription_plan_days?: number
@@ -1022,14 +1020,13 @@ export type Database = {
           last_payment_phone?: string | null
           last_payment_receipt?: string | null
           low_stock_threshold?: number
-          name?: string
-          owner_email?: string | null
-          owner_phone?: string | null
           payment_lock_active?: boolean
           payment_lock_amount_ksh?: number
           payment_lock_reason?: string | null
           payment_lock_started_at?: string | null
           payment_lock_started_by?: string | null
+          name?: string
+          owner_email?: string | null
           status?: string
           subscription_ends_at?: string | null
           subscription_plan_days?: number
@@ -1568,12 +1565,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -1621,12 +1612,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -1672,12 +1657,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -1705,30 +1684,28 @@ export type Database = {
           counter_count: number
           counter_inventory_mode: string
           created_at: string
-          custom_billing_note: string
           feature_flags: Json
-          last_payment_at: string
-          last_payment_phone: string
-          last_payment_receipt: string
           lifecycle_reason: string
           member_count: number
           owner_email: string
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string
-          payment_lock_started_at: string
           product_count: number
           shop_id: string
           shop_name: string
           status: string
           stock_units: number
-          subscription_ends_at: string
-          subscription_plan_days: number
-          subscription_price_ksh: number
-          subscription_status: string
           suspended_at: string
-          trial_ends_at: string
         }[]
+      }
+      admin_get_platform_billing_settings: {
+        Args: never
+        Returns: Json
+      }
+      admin_update_platform_billing_settings: {
+        Args: {
+          p_subscription_price_ksh: number
+          p_trial_duration_days: number
+        }
+        Returns: Json
       }
       admin_list_shop_members: {
         Args: { _shop: string }
@@ -1764,12 +1741,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -1787,15 +1758,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      admin_set_shop_payment_lock: {
-        Args: {
-          p_amount_ksh?: number
-          p_locked: boolean
-          p_reason?: string
-          p_shop_id: string
-        }
-        Returns: Json
       }
       apply_pos_operation: {
         Args: {
@@ -1885,12 +1847,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -1948,12 +1904,6 @@ export type Database = {
           low_stock_threshold: number
           name: string
           owner_email: string | null
-          owner_phone: string | null
-          payment_lock_active: boolean
-          payment_lock_amount_ksh: number
-          payment_lock_reason: string | null
-          payment_lock_started_at: string | null
-          payment_lock_started_by: string | null
           status: string
           subscription_ends_at: string | null
           subscription_plan_days: number
@@ -2688,10 +2638,6 @@ export type Database = {
           _weekday: number
         }
         Returns: undefined
-      }
-      set_owner_business_phone: {
-        Args: { _phone: string; _shop_id: string }
-        Returns: Json
       }
       set_service_counter_active: {
         Args: { _active: boolean; _counter: string }
